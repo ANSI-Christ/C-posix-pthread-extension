@@ -61,8 +61,8 @@ static void f2(struct{int a; double b; const char *c;} *args){
 
 static void test_task_arguments(void){
     pthread_pool_t p=pthread_pool_create(1,0,0);
-    pthread_pool_task(p, f_args, 1, 1.1, (const char*)"str_1" );
-    pthread_pool_task(p, f_args, 2, 2.2, (const char*)"str_2" );
+    pthread_pool_task(p, f2, 1, 1.1, (const char*)"str_1" );
+    pthread_pool_task(p, f2, 2, 2.2, (const char*)"str_2" );
     pthread_pool_destroy_later(&p);
 }
 
