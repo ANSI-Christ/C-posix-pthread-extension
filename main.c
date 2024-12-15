@@ -5,8 +5,6 @@
 #include "pthread_ext.h"
 
 
-
-
 #define RUNTIME(...) ({\
     struct timespec _rt1={0},_rt2={0};\
     clock_gettime(CLOCK_REALTIME,&_rt1);\
@@ -36,11 +34,13 @@ static void timespec_sub(struct timespec *tm,int sec,int nanosec){
 }
 
 
+
+
 static void repost(struct{int cnt;} *args,int index,void *pool){
     if(args->cnt) pthread_pool_task(pool,repost,args->cnt-1);
 }
 
-static void pool_banchmark(void){
+static void benchmark(void){
     const unsigned int cores=4;
     pthread_pool_t p=pthread_pool_create(cores,0,0);
     printf("rt: %f\n",RUNTIME(
@@ -53,7 +53,23 @@ static void pool_banchmark(void){
 }
 
 
-static void *thread(int *run){
+
+
+static void f2(struct{int a; double b; const char *c;} *args){
+    printf("args: %d, %f, %s\n",args->a,args->b,args->c);
+}
+
+static void test_task_arguments(void){
+    pthread_pool_t p=pthread_pool_create(1,0,0);
+    pthread_pool_task(p, f_args, 1, 1.1, (const char*)"str_1" );
+    pthread_pool_task(p, f_args, 2, 2.2, (const char*)"str_2" );
+    pthread_pool_destroy_later(&p);
+}
+
+
+
+
+static void *f3(int *run){
     struct timespec t={0,5000000};
     pthread_pausable(1);
     while(*run){
@@ -63,12 +79,10 @@ static void *thread(int *run){
     return NULL;
 }
 
-static void thread_pause(void){
+static void test_pause_resume(void){
     int run=1;
     pthread_t t;
-
-    pthread_create(&t,0,(void*)thread,&run);
-
+    pthread_create(&t,0,(void*)f3,&run);
     while(run)
         switch(getchar()){
             case 'p': pthread_pause(t); puts("pause"); break;
@@ -83,8 +97,12 @@ static void thread_pause(void){
     pthread_join(t,NULL);
 }
 
+
+
+
 int main(int argc, char **argv){
-    pool_banchmark();
-    //thread_pause();
+    benchmark();
+    test_task_arguments();
+//    test_pause_resume();
     return 0;
 }
