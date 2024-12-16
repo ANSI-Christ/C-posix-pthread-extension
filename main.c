@@ -1,37 +1,17 @@
 #include <time.h>
 #include <stdio.h>
 
+
 #define PTHREAD_EXT_IMPL
 #include "pthread_ext.h"
 
 
 #define RUNTIME(...) ({\
-    struct timespec _rt1={0},_rt2={0};\
-    clock_gettime(CLOCK_REALTIME,&_rt1);\
-    { __VA_ARGS__ ;}\
-    clock_gettime(CLOCK_REALTIME,&_rt2);\
-    timespec_sub(&_rt2,_rt1.tv_sec,_rt1.tv_nsec);\
-    (_rt2.tv_sec + _rt2.tv_nsec/1000000000.);\
+    const clock_t _rts=clock();\
+    __VA_ARGS__;\
+    (clock()-_rts)/(double)CLOCKS_PER_SEC;\
 })
 
-static void timespec_norm(struct timespec *tm){
-    tm->tv_sec+=(tm->tv_nsec/1000000000);
-    tm->tv_nsec%=1000000000;
-}
-
-static void timespec_sub(struct timespec *tm,int sec,int nanosec){
-    sec+=nanosec/1000000000;
-    nanosec%=1000000000;
-    timespec_norm(tm);
-    if(tm->tv_sec >= sec){
-        tm->tv_sec-=sec;
-        if(tm->tv_nsec>nanosec){
-            tm->tv_nsec-=nanosec;
-        }else if(tm->tv_sec--){
-            tm->tv_nsec+=1000000000-nanosec;
-        }else tm->tv_sec=tm->tv_nsec=0;
-    }else tm->tv_sec=tm->tv_nsec=0;
-}
 
 
 
