@@ -1,5 +1,6 @@
 #include <time.h>
 #include <stdio.h>
+#include <stddef.h>
 
 
 #define PTHREAD_EXT_IMPL
@@ -9,7 +10,7 @@
 #define RUNTIME(...) ({\
     const clock_t _rts=clock();\
     __VA_ARGS__;\
-    (clock()-_rts)/(double)CLOCKS_PER_SEC;\
+    ((size_t)(clock()-_rts))/(double)CLOCKS_PER_SEC;\
 })
 
 
