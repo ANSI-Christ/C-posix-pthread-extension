@@ -36,14 +36,18 @@ static void benchmark(void){
 
 
 
-static void f2(struct{int a; double b; const char *c;} *args){
-    printf("args: %d, %f, %s\n",args->a,args->b,args->c);
+static void f2(struct{int prio; double fp; const char *str;} *args){
+    printf("prio[%d]: %f %s\n",args->prio,args->fp,args->str);
 }
 
-static void test_task_arguments(void){
-    pthread_pool_t p=pthread_pool_create(1,0,0);
-    pthread_pool_task(p, f2, 1, 1.1, (const char*)"str_1" );
-    pthread_pool_task(p, f2, 2, 2.2, (const char*)"str_2" );
+static void test_prio(void){
+    pthread_pool_t p=pthread_pool_create(1,8,0);
+    pthread_pool_task(p, f2, 0, 0.1, (const char*)"aaa" ); /* prio 0 */
+    pthread_pool_task(p, f2, 0, 0.2, (const char*)"bbb" ); /* prio 0 */
+    pthread_pool_task_prio(p,1, f2, 1, 1., (const char*)"ccc" ); /* prio 1 */
+    pthread_pool_task_prio(p,2, f2, 2, 2., (const char*)"ddd" ); /* prio 2 */
+    pthread_pool_task_prio(p,3, f2, 3, 3., (const char*)"eee" ); /* prio 3 */
+    pthread_pool_task_prio(p,8, f2, 8, 8., (const char*)"fff" ); /* prio 4 */
     pthread_pool_destroy_later(&p);
 }
 
@@ -83,7 +87,7 @@ static void test_pause_resume(void){
 
 int main(int argc, char **argv){
     benchmark();
-    test_task_arguments();
+    test_prio();
 //    test_pause_resume();
     return 0;
 }
