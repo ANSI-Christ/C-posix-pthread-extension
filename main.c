@@ -22,12 +22,12 @@ static void repost(struct{int cnt;} *args,int index,void *pool){
 }
 
 static void benchmark(void){
-    const unsigned int cores=4;
+    const unsigned int cores=pthread_cores();
     pthread_pool_t p=pthread_pool_create(cores,0,0);
     printf("rt: %f\n",RUNTIME(
         unsigned int i=cores*4;
         while(i--)
-            pthread_pool_task(p,repost,1000000);
+            pthread_pool_task(p,repost,100000);
         pthread_pool_wait(p);
     ));
     pthread_pool_destroy(&p);
