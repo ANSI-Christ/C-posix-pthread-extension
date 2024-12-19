@@ -94,7 +94,8 @@ static void f4(struct{pthread_channel_t *c} *args){
 static void test_channel(void){
     struct{int a; double b;}value;
     pthread_pool_t p=pthread_pool_create(4,0,0);
-    pthread_channel_t c=pthread_channel_init();
+    pthread_channel_t c;
+    pthread_channel_open(&c);
     int i=10;
 
     while(i--) pthread_pool_task(p,f4,NULL);
