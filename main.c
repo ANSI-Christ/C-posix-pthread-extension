@@ -83,11 +83,36 @@ static void test_pause_resume(void){
 }
 
 
+static void f4(struct{pthread_channel_t *c} *args){
+    sleep(1);
+    if(args->c){
+        const struct{int a; double b;}value={1,2.2};
+        pthread_channel_push(args->c,&value,sizeof(value));
+    }
+}
+
+static void test_channel(void){
+    struct{int a; double b;}value;
+    pthread_pool_t p=pthread_pool_create(4,0,0);
+    pthread_channel_t c=pthread_channel_init();
+    int i=10;
+
+    while(i--) pthread_pool_task(p,f4,NULL);
+    pthread_pool_task(p,f4,&c);
+
+    pthread_channel_pop(&c,&value,sizeof(value));
+    printf("%d, %f\n",value.a,value.b);
+
+    pthread_pool_destroy_later(&p);
+    pthread_channel_close(&c);
+}
+
 
 
 int main(int argc, char **argv){
-    benchmark();
     test_prio();
+    test_channel();
+    benchmark();
 //    test_pause_resume();
     return 0;
 }
