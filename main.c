@@ -23,7 +23,7 @@ static void repost(struct{int cnt;} *args,int index,void *pool){
 
 static void benchmark(void){
     const unsigned int cores=pthread_cores();
-    pthread_pool_t p=pthread_pool_create(cores,0,0);
+    pthread_pool_t p=pthread_pool_create(cores,0);
     printf("rt: %f\n",RUNTIME(
         unsigned int i=cores*4;
         while(i--)
@@ -41,7 +41,7 @@ static void f2(struct{int prio; double fp; const char *str;} *args){
 }
 
 static void test_prio(void){
-    pthread_pool_t p=pthread_pool_create(1,8,0);
+    pthread_pool_t p=pthread_pool_create(1,8);
     pthread_pool_task(p, f2, 0, 0.1, (const char*)"aaa" ); /* prio 0 */
     pthread_pool_task(p, f2, 0, 0.2, (const char*)"bbb" ); /* prio 0 */
     pthread_pool_task_prio(p,1, f2, 1, 1., (const char*)"ccc" ); /* prio 1 */
@@ -93,7 +93,7 @@ static void f4(struct{pthread_channel_t *c;} *args){
 
 static void test_channel(void){
     struct{int a; double b;}value;
-    pthread_pool_t p=pthread_pool_create(4,0,0);
+    pthread_pool_t p=pthread_pool_create(4,0);
     pthread_channel_t c;
     pthread_channel_open(&c);
     int i=10;
