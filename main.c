@@ -83,7 +83,7 @@ static void test_pause_resume(void){
 }
 
 
-static void f4(struct{pthread_channel_t *c} *args){
+static void f4(struct{pthread_channel_t *c;} *args){
     sleep(1);
     if(args->c){
         const struct{int a; double b;}value={1,2.2};
