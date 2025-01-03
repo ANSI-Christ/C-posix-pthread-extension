@@ -51,4 +51,3 @@ rmo:
 
 clean:
 	rm $(OBJECTS) $(TARGET)
-
