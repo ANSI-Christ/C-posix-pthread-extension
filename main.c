@@ -113,7 +113,7 @@ static void test_channel(void){
 
 static void f5(void *pool){
     if(!pool){ printf("task f5 was rejected\n"); return;}
-    sleepf(1.);
+    sleep(2);
 }
 
 static void f6(void *pool,struct{pthread_channel_t *c;} *args){
@@ -133,7 +133,7 @@ static void test_reject(void){
     pthread_pool_task(p,f5);
     pthread_pool_task(p,f5);
     pthread_pool_task(p,f6,&c);
-    sleepf(0.1);
+    sleep(1);
     pthread_pool_destroy(&p); // pthread_pool_clear(p);
 
     pthread_channel_pop(&c,&value,sizeof(value));
