@@ -16,8 +16,9 @@
 
 
 
-static void repost(struct{int cnt;} *args,int index,void *pool){
-    if(args->cnt) pthread_pool_task(pool,repost,args->cnt-1);
+static void f1(void *pool,struct{int cnt;} *args,int index){
+    if(!pool) return;
+    if(args->cnt) pthread_pool_task(pool,f1,args->cnt-1);
 }
 
 static void benchmark(void){
@@ -26,7 +27,7 @@ static void benchmark(void){
     printf("rt: %f\n",RUNTIME(
         unsigned int i=cores*4;
         while(i--)
-            pthread_pool_task(p,repost,100000);
+            pthread_pool_task(p,f1,100000);
         pthread_pool_wait(p);
     ));
     pthread_pool_destroy(&p);
@@ -35,7 +36,8 @@ static void benchmark(void){
 
 
 
-static void f2(struct{int prio; double fp; const char *str;} *args){
+static void f2(void *pool,struct{int prio; double fp; const char *str;} *args){
+    if(!pool) return;
     printf("prio[%d]: %f %s\n",args->prio,args->fp,args->str);
 }
 
@@ -82,7 +84,8 @@ static void test_pause_resume(void){
 }
 
 
-static void f4(struct{pthread_channel_t *c;} *args){
+static void f4(void *pool,struct{pthread_channel_t *c;} *args){
+    if(!pool) return;
     sleep(1);
     if(args->c){
         const struct{int a; double b;}value={1,2.2};
@@ -108,10 +111,44 @@ static void test_channel(void){
 }
 
 
+static void f5(void *pool){
+    if(!pool){ printf("task f5 was rejected\n"); return;}
+    sleepf(1.);
+}
+
+static void f6(void *pool,struct{pthread_channel_t *c;} *args){
+    pthread_channel_push(args->c,&pool,sizeof(pool));
+}
+
+static void test_reject(void){
+    void *value;
+    pthread_channel_t c;
+    pthread_pool_t p=pthread_pool_create(1,0);
+
+    pthread_channel_open(&c);
+
+    pthread_pool_task(p,f5);
+    pthread_pool_task(p,f5);
+    pthread_pool_task(p,f5);
+    pthread_pool_task(p,f5);
+    pthread_pool_task(p,f5);
+    pthread_pool_task(p,f6,&c);
+    sleepf(0.1);
+    pthread_pool_destroy(&p); // pthread_pool_clear(p);
+
+    pthread_channel_pop(&c,&value,sizeof(value));
+    if(value) printf("task f6 was done\n");
+    else printf("task f6 was rejected\n");
+
+    pthread_channel_close(&c);
+}
+
 
 int main(int argc, char **argv){
+
     test_prio();
     test_channel();
+    test_reject();
     benchmark();
 //    test_pause_resume();
     return 0;
