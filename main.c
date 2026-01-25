@@ -23,14 +23,14 @@ static void f1(void *pool,struct{int cnt;} *args,int index){
 
 static void benchmark(void){
     const unsigned int cores=pthread_cores();
-    pthread_pool_t p=pthread_pool_create(cores,0);
+    pthread_pool_t *p=pthread_pool_create(cores,0);
     printf("rt: %f\n",RUNTIME(
         unsigned int i=cores*4;
         while(i--)
             pthread_pool_task(p,f1,100000);
         pthread_pool_wait(p);
     ));
-    pthread_pool_destroy(&p);
+    pthread_pool_destroy(p);
 }
 
 
@@ -42,14 +42,14 @@ static void f2(void *pool,struct{int prio; double fp; const char *str;} *args){
 }
 
 static void test_prio(void){
-    pthread_pool_t p=pthread_pool_create(1,8);
+    pthread_pool_t *p=pthread_pool_create(1,8);
     pthread_pool_task(p, f2, 0, 0.1, (const char*)"aaa" ); /* prio 0 */
     pthread_pool_task(p, f2, 0, 0.2, (const char*)"bbb" ); /* prio 0 */
     pthread_pool_task_prio(p,1, f2, 1, 1., (const char*)"ccc" ); /* prio 1 */
     pthread_pool_task_prio(p,2, f2, 2, 2., (const char*)"ddd" ); /* prio 2 */
     pthread_pool_task_prio(p,3, f2, 3, 3., (const char*)"eee" ); /* prio 3 */
     pthread_pool_task_prio(p,8, f2, 8, 8., (const char*)"fff" ); /* prio 4 */
-    pthread_pool_destroy_later(&p);
+    pthread_pool_destroy_later(p);
 }
 
 
@@ -95,7 +95,7 @@ static void f4(void *pool,struct{pthread_channel_t *c;} *args){
 
 static void test_channel(void){
     struct{int a; double b;}value;
-    pthread_pool_t p=pthread_pool_create(4,0);
+    pthread_pool_t *p=pthread_pool_create(4,0);
     pthread_channel_t c;
     pthread_channel_open(&c);
     int i=10;
@@ -106,7 +106,7 @@ static void test_channel(void){
     pthread_channel_pop(&c,&value,sizeof(value));
     printf("%d, %f\n",value.a,value.b);
 
-    pthread_pool_destroy_later(&p);
+    pthread_pool_destroy_later(p);
     pthread_channel_close(&c);
 }
 
@@ -123,7 +123,7 @@ static void f6(void *pool,struct{pthread_channel_t *c;} *args){
 static void test_reject(void){
     void *value;
     pthread_channel_t c;
-    pthread_pool_t p=pthread_pool_create(1,0);
+    pthread_pool_t *p=pthread_pool_create(1,0);
 
     pthread_channel_open(&c);
 
@@ -134,7 +134,7 @@ static void test_reject(void){
     pthread_pool_task(p,f5);
     pthread_pool_task(p,f6,&c);
     sleep(1);
-    pthread_pool_destroy(&p); // pthread_pool_clear(p);
+    pthread_pool_destroy(p); // pthread_pool_clear(p);
 
     pthread_channel_pop(&c,&value,sizeof(value));
     if(value) printf("task f6 was done\n");
