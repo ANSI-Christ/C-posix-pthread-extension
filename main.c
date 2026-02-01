@@ -55,35 +55,6 @@ static void test_prio(void){
 
 
 
-static void *f3(int *run){
-    struct timespec t={0,5000000};
-    pthread_pausable(1);
-    while(*run){
-        puts("run...");
-        nanosleep(&t,NULL);
-    }
-    return NULL;
-}
-
-static void test_pause_resume(void){
-    int run=1;
-    pthread_t t;
-    pthread_create(&t,0,(void*)f3,&run);
-    while(run)
-        switch(getchar()){
-            case 'p': pthread_pause(t); puts("pause"); break;
-            case 'c': pthread_resume(t); puts("resume"); break;
-            case 'q':
-                pthread_pause(t);
-                run=0;
-                pthread_resume(t);
-                puts("quit");
-                break;
-        }
-    pthread_join(t,NULL);
-}
-
-
 static void f4(void *pool,struct{pthread_channel_t *c;} *args){
     if(!pool) return;
     sleep(1);
@@ -150,6 +121,6 @@ int main(int argc, char **argv){
     test_channel();
     test_reject();
     benchmark();
-//    test_pause_resume();
+
     return 0;
 }
