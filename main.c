@@ -6,6 +6,7 @@
 #define PTHREAD_EXT_IMPL
 #include "pthread_ext.h"
 
+extern unsigned int sleep(unsigned int);
 
 #define RUNTIME(...) ({\
     const clock_t _rts=clock();\
@@ -114,12 +115,62 @@ static void test_reject(void){
     pthread_channel_close(&c);
 }
 
+#define VAR 3
+
+static void f7(void *p,struct{pthread_group_t *g; unsigned  int n;} * const args){
+    if(pthread_group_rejected(args->g))
+        return;
+    if(!p){
+        pthread_group_reject(args->g,1);
+        return;
+    }
+#if VAR==3
+    if(args->n==2) pthread_group_reject(args->g,1); else
+#endif
+    {
+        printf("task begin %u\n",args->n);
+        sleep(1);
+        printf("task end %u\n\n",args->n);
+        pthread_group_progress(args->g,0);
+    }
+}
+
+static void test_group(void){
+    pthread_pool_t * const p=pthread_pool_create(1,0);
+    pthread_group_t g[1];
+    struct timespec t[1];
+    unsigned int i=4, done, all;
+
+    pthread_group_init(g,i,NULL);
+
+    while(i) pthread_pool_task(p,f7,(pthread_group_t*)g,i--);
+
+#if VAR==1
+    timespec_future(t,3,0);
+    i=pthread_group_timedwait(g,&done,&all,t);
+    printf("done! %d [%u / %u]\n",i,done,all);
+    pthread_group_destroy(g);
+#elif VAR==2
+    timespec_future(t,3,0);
+    i=pthread_group_timedwait(g,&done,&all,t);
+    pthread_group_reject(g,0);
+    pthread_group_destroy(g);
+#elif VAR==3
+    i=pthread_group_wait(g,&done,&all);
+    printf("done! %d [%u / %u]\n",i,done,all);
+#endif
+
+    pthread_pool_destroy(p,0,0);
+}
+#undef VAR
+
 
 int main(int argc, char **argv){
 
     test_prio();
     test_channel();
     test_reject();
+    test_group();
     benchmark();
 
     return 0;
