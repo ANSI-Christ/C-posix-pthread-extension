@@ -1,7 +1,8 @@
 # C posix pthread extension
-An extension for POSIX pthread: thread pool, signal, channel, pause-resume, backtrace.
+
+An extension for POSIX pthread: thread pool, channel, group, backtrace.
   - cross-platform
   - a simple and intuitive API
-  - pthread_pool_t is faster than boost::asio::thread_pool
+  - flexible
 
 Look for usage examples in main.c
