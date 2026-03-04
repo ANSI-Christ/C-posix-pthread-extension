@@ -31,7 +31,7 @@ static void benchmark(void){
             pthread_pool_task(p,f1,100000);
         pthread_pool_wait(p);
     ));
-    pthread_pool_destroy(p,1,0);
+    pthread_pool_destroy(p,1);
 }
 
 
@@ -50,7 +50,7 @@ static void test_prio(void){
     pthread_pool_task_prio(p,2, f2, 2, 2., (const char*)"ddd" ); /* prio 2 */
     pthread_pool_task_prio(p,3, f2, 3, 3., (const char*)"eee" ); /* prio 3 */
     pthread_pool_task_prio(p,8, f2, 8, 8., (const char*)"fff" ); /* prio 4 */
-    pthread_pool_destroy(p,0,0);
+    pthread_pool_destroy(p,0);
 }
 
 
@@ -78,7 +78,7 @@ static void test_channel(void){
     pthread_channel_pop(&c,&value,sizeof(value));
     printf("%d, %f\n",value.a,value.b);
 
-    pthread_pool_destroy(p,0,0);
+    pthread_pool_destroy(p,0);
     pthread_channel_close(&c);
 }
 
@@ -106,7 +106,7 @@ static void test_reject(void){
     pthread_pool_task(p,f5);
     pthread_pool_task(p,f6,&c);
     sleep(1);
-    pthread_pool_destroy(p,1,0); // pthread_pool_clear(p);
+    pthread_pool_destroy(p,1); // pthread_pool_clear(p);
 
     pthread_channel_pop(&c,&value,sizeof(value));
     if(value) printf("task f6 was done\n");
@@ -160,7 +160,7 @@ static void test_group(void){
     printf("done! %d [%u / %u]\n",i,done,all);
 #endif
 
-    pthread_pool_destroy(p,0,0);
+    pthread_pool_destroy(p,0);
 }
 #undef VAR
 
