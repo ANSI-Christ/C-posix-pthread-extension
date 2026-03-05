@@ -1,6 +1,6 @@
 # C posix pthread extension
 
-An extension for POSIX pthread: thread pool, channel, group, backtrace.
+An extension for POSIX pthread: thread pool, channel, group.
   - cross-platform
   - a simple and intuitive API
   - flexible
