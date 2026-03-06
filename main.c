@@ -8,12 +8,37 @@
 
 extern unsigned int sleep(unsigned int);
 
-#define RUNTIME(...) ({\
-    const clock_t _rts=clock();\
-    __VA_ARGS__;\
-    ((size_t)(clock()-_rts))/(double)CLOCKS_PER_SEC;\
-})
+double timespec_seconds(const struct timespec * const t){
+    return t->tv_sec + t->tv_nsec/1000000000.;
+}
 
+void timespec_normalize(struct timespec * const t){
+    t->tv_sec+=t->tv_nsec/1000000000;
+    if( (t->tv_nsec%=1000000000)<0){
+        t->tv_nsec += 1000000000;
+        --t->tv_sec;
+    }
+}
+
+void timespec_change(struct timespec * const t,const long sec,const long nanosec){
+    t->tv_sec+=sec;
+    t->tv_nsec+=nanosec;
+    timespec_normalize(t);
+}
+
+#define timespec_current(_t_) clock_gettime(CLOCK_REALTIME,(_t_))
+#define timespec_future(_t_,_s_,_ns_) do{\
+    struct timespec * const _1_=(_t_);\
+    timespec_current(_1_);\
+    timespec_change(_1_,(_s_),(_ns_));\
+}while(0)
+
+#define RUNTIME(...) ({\
+    struct timespec _rt1[1], _rt2[1];\
+    timespec_current(_rt1); {__VA_ARGS__} timespec_current(_rt2);\
+    timespec_change(_rt2,-_rt1->tv_sec,-_rt1->tv_nsec);\
+    timespec_seconds(_rt2);\
+})
 
 
 
@@ -124,10 +149,8 @@ static void f7(void *p,struct{pthread_group_t *g; unsigned  int n;} * const args
         pthread_group_reject(args->g,1);
         return;
     }
-#if VAR==3
-    if(args->n==2) pthread_group_reject(args->g,1); else
-#endif
-    {
+    if(args->n==5) pthread_group_reject(args->g,1);
+    else{
         printf("task begin %u\n",args->n);
         sleep(1);
         printf("task end %u\n\n",args->n);
@@ -137,28 +160,45 @@ static void f7(void *p,struct{pthread_group_t *g; unsigned  int n;} * const args
 
 static void test_group(void){
     pthread_pool_t * const p=pthread_pool_create(1,0);
-    pthread_group_t g[1];
+    pthread_group_t *g=malloc(sizeof(*g));
     struct timespec t[1];
-    unsigned int i=4, done, all;
+    unsigned int i, done, all;
+    pthread_pool_banch(p,0);
 
-    pthread_group_init(g,i,NULL,NULL);
-
-    while(i) pthread_pool_task(p,f7,(pthread_group_t*)g,i--);
-
-#if VAR==1
-    timespec_future(t,3,0);
-    i=pthread_group_timedwait(g,&done,&all,t);
-    printf("done! %d [%u / %u]\n",i,done,all);
-    pthread_group_destroy(g);
-#elif VAR==2
-    timespec_future(t,3,0);
-    i=pthread_group_timedwait(g,&done,&all,t);
-    pthread_group_reject(g,0);
-    pthread_group_destroy(g);
-#elif VAR==3
+    pthread_group_init(g,4,NULL,free); // can be destroy inside task, in nonblocking mode
+    for(i=0;i<4;++i) pthread_pool_task(p,f7,(pthread_group_t*)g,i);
     i=pthread_group_wait(g,&done,&all);
-    printf("done! %d [%u / %u]\n",i,done,all);
-#endif
+    printf("group wait end = %d [%u / %u]\n\n",i,done,all);
+
+
+    pthread_group_progress(g,7);
+    for(i=0;i<7;++i) pthread_pool_task(p,f7,(pthread_group_t*)g,i);
+    i=pthread_group_wait(g,&done,&all);
+    printf("group wait end = %d [%u / %u]\n\n",i,done,all);
+
+
+    pthread_group_progress(g,4);
+    for(i=0;i<4;++i) pthread_pool_task(p,f7,(pthread_group_t*)g,i);
+    timespec_future(t,3,0);
+    i=pthread_group_timedwait(g,&done,&all,t);
+    printf("group timedwait end = %d [%u / %u]\n\n",i,done,all);
+    pthread_group_reject(g,0);
+
+
+    pthread_group_progress(g,4);
+    for(i=0;i<4;++i) pthread_pool_task(p,f7,(pthread_group_t*)g,i);
+    sleep(1);
+    pthread_pool_unpending(p);
+    i=pthread_group_wait(g,&done,&all);
+    printf("group timedwait end = %d [%u / %u]\n\n",i,done,all);
+
+
+    pthread_group_progress(g,4);
+    for(i=0;i<4;++i) pthread_pool_task(p,f7,(pthread_group_t*)g,i);
+    timespec_future(t,3,0);
+    i=pthread_group_timedwait(g,&done,&all,t);
+    pthread_group_destroy(g);
+    printf("group destroy nonblocked\n\n");
 
     pthread_pool_destroy(p,0);
 }
