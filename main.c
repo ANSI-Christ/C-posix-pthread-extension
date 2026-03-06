@@ -141,7 +141,7 @@ static void test_group(void){
     struct timespec t[1];
     unsigned int i=4, done, all;
 
-    pthread_group_init(g,i,NULL);
+    pthread_group_init(g,i,NULL,NULL);
 
     while(i) pthread_pool_task(p,f7,(pthread_group_t*)g,i--);
 
