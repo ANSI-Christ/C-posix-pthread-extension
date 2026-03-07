@@ -143,18 +143,23 @@ static void test_reject(void){
 #define VAR 3
 
 static void f7(void *p,struct{pthread_group_t *g; unsigned  int n;} * const args){
-    if(pthread_group_rejected(args->g))
-        return;
-    if(!p){
-        pthread_group_reject(args->g,1);
+    const int rejected=pthread_group_rejected(args->g);
+    if(rejected){
+        if(rejected==1) printf("group destroy at place 1\n\n");
+        else if(rejected==-1){/* nothing to do */}
         return;
     }
-    if(args->n==5) pthread_group_reject(args->g,1);
-    else{
+    if(!p){
+        if(pthread_group_reject(args->g,1)==1) printf("group destroy at place 2\n\n");
+        return;
+    }
+    if(args->n==5){
+        if(pthread_group_reject(args->g,1)==1) printf("group destroy at place 3\n\n");
+    }else{
         printf("task begin %u\n",args->n);
         sleep(1);
         printf("task end %u\n\n",args->n);
-        pthread_group_progress(args->g,0);
+        if(pthread_group_progress(args->g,0)==1) printf("group destroy at place 4\n\n");
     }
 }
 
@@ -165,7 +170,7 @@ static void test_group(void){
     unsigned int i, done, all;
     pthread_pool_banch(p,0);
 
-    pthread_group_init(g,4,NULL,free); // can be destroy inside task, in nonblocking mode
+    pthread_group_init(g,4,NULL,free); // can be destroy inside task, in nonblocking mode cause group placed not in stack
     for(i=0;i<4;++i) pthread_pool_task(p,f7,(pthread_group_t*)g,i);
     i=pthread_group_wait(g,&done,&all);
     printf("group wait end = %d [%u / %u]\n\n",i,done,all);
@@ -197,8 +202,8 @@ static void test_group(void){
     for(i=0;i<4;++i) pthread_pool_task(p,f7,(pthread_group_t*)g,i);
     timespec_future(t,3,0);
     i=pthread_group_timedwait(g,&done,&all,t);
-    pthread_group_destroy(g);
-    printf("group destroy nonblocked\n\n");
+    if(pthread_group_destroy(g)==1)
+        printf("group destroy at place 0\n\n");
 
     pthread_pool_destroy(p,0);
 }
