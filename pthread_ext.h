@@ -413,7 +413,8 @@ typedef struct{
     unsigned int i;
 }_pthread_pool_initializer_t;
 
-#define _pthread_pool_tids(_p_) ((pthread_t*)(_p_->queue+1+_p_->max))
+#define _pthread_pool_pad(_N_) ((M_PADDING(_pthread_pool_queue_t,pthread_t)*(_N_))%M_ALIGNOF(pthread_t))
+#define _pthread_pool_tids(_p_) ((pthread_t*)(((char*)(_p_->queue+1+(unsigned int)_p_->max))+_pthread_pool_pad(1+(unsigned int)_p_->max)))
 
 static void _pthread_pool_push(pthread_pool_t * const p,_pthread_pool_task_t * const t,unsigned char prio){
     if(prio>p->peak) p->peak=prio;
@@ -539,7 +540,7 @@ pthread_pool_t *pthread_pool_create_ex(unsigned int count,const unsigned char pr
     if(!deallocator) deallocator=free;
 
     if(count || (count=pthread_cores())){
-        const size_t size=sizeof(_pthread_pool_queue_t)*(1+(unsigned int)prio) + sizeof(pthread_t)*count;
+        const size_t size=sizeof(_pthread_pool_queue_t)*(1+(unsigned int)prio) + sizeof(pthread_t)*count + _pthread_pool_pad(1+(unsigned int)prio);
         pthread_pool_t * const p=(pthread_pool_t*)allocator(M_OFFSETOF(*p,queue) + size);
         if(p){
             if(pthread_mutex_init(p->mtx,mattr)){
@@ -667,6 +668,7 @@ const pthread_t *pthread_pool_array(const pthread_pool_t * const p){
 }
 
 #undef _pthread_pool_tids
+#undef _pthread_pool_pad
 
 int pthread_groupattr_init(pthread_groupattr_t * const attr){
     if(!attr) return EINVAL;
