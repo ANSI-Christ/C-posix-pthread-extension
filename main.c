@@ -42,16 +42,6 @@ void timespec_change(struct timespec * const t,const long sec,const long nanosec
 
 
 
-/*
-The correct way is:
-
-static void f1(void *pool,struct{int cnt;} *args,int index){
-    if(pool && args->cnt) pthread_pool_task(pool,f1,args->cnt-1);
-    return PTHREAD_TASK_AUTORELEASE;
-}
-
-But this library will not check the return code without custom extensions from user!
-*/
 
 static void f1(void *pool,struct{int cnt;} *args,int index){
     if(!pool) return;
