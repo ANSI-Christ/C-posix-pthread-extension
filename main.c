@@ -216,12 +216,44 @@ static void test_group(void){
 }
 
 
+
+static int f7(void *pool,struct{int state; const int id;} * const args){
+    if(!pool) return 0;
+    switch(args->state){
+        #define CASE(_n_) case _n_:\
+            printf("statemachine[%d]: %d\n",args->id,args->state);\
+            ++args->state;\
+            pthread_pool_raw_task_queue(pool,pthread_pool_raw_task_from_arg(args),0);\
+            return 1
+        CASE(0);
+        CASE(1);
+        CASE(2);
+        CASE(3);
+        CASE(4);
+        CASE(6);
+        default:
+            printf("statemachine[%d]: %d\n",args->id,args->state);
+        #undef CASE
+    }
+    return 0;
+}
+
+static void test_statemachine(void){
+    pthread_pool_t * const p=pthread_pool_create(2,0);
+    int i=10;
+    while(i--)
+        pthread_pool_task(p,f7,0,i);
+    pthread_pool_destroy(p,0);
+}
+
+
 int main(int argc, char **argv){
 
     test_prio();
     test_channel();
     test_reject();
     test_group();
+    test_statemachine();
     benchmark();
 
     return 0;
