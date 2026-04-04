@@ -47,7 +47,7 @@ void timespec_change(struct timespec * const t,const long sec,const long nanosec
 
 
 
-static int f1(void *pool,struct{int cnt;} *args,int index){
+static int f1(void *pool,struct{pthread_pool_raw_task_t _header; int cnt;} *args,int index){
     if(pool && args->cnt) pthread_pool_task(pool,f1,args->cnt-1);
     return 0;
 }
@@ -68,7 +68,7 @@ static void benchmark(void){
 
 
 
-static int f2(void *pool,struct{int prio; double fp; const char *str;} *args){
+static int f2(void *pool,struct{pthread_pool_raw_task_t _header; int prio; double fp; const char *str;} *args){
     if(pool) printf("prio[%d]: %f %s\n",args->prio,args->fp,args->str);
     return 0;
 }
@@ -87,7 +87,7 @@ static void test_prio(void){
 
 
 
-static int f3(void *pool,struct{pthread_channel_t *c;} *args){
+static int f3(void *pool,struct{pthread_pool_raw_task_t _header; pthread_channel_t *c;} *args){
     if(pool){
         sleepf(0.1);
         if(args->c){
@@ -122,7 +122,7 @@ static int f4(void *pool){
     return 0;
 }
 
-static int f5(void *pool,struct{pthread_channel_t *c;} *args){
+static int f5(void *pool,struct{pthread_pool_raw_task_t _header; pthread_channel_t *c;} *args){
     pthread_channel_push(args->c,&pool,sizeof(pool));
     return 0;
 }
@@ -148,7 +148,7 @@ static void test_reject(void){
 }
 
 
-static int f6(void *p,struct{pthread_group_t *g; unsigned  int n;} * const args){
+static int f6(void *p,struct{pthread_pool_raw_task_t _header; pthread_group_t *g; unsigned  int n;} * const args){
     const int rejected=pthread_group_rejected(args->g);
     if(rejected){
         if(rejected==1) printf("group destroy at place 1\n\n");
@@ -217,13 +217,13 @@ static void test_group(void){
 
 
 
-static int f7(void *pool,struct{int state; const int id;} * const args){
+static int f7(void *pool,struct{pthread_pool_raw_task_t _header; int state; const int id;} * const args){
     if(!pool) return 0;
     switch(args->state){
         #define CASE(_n_) case _n_:\
             printf("statemachine[%d]: %d\n",args->id,args->state);\
             ++args->state;\
-            pthread_pool_raw_task_queue(pool,pthread_pool_raw_task_from_arg(args),0);\
+            pthread_pool_raw_task_queue(pool,args,0);\
             return 1
         CASE(0);
         CASE(1);
