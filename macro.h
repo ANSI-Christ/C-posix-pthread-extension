@@ -49,7 +49,7 @@
 /*!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!*/
 
 #define _M_JOIN(_1_,_2_) _1_ ## _2_
-#ifdef _cplusplus
+#ifdef __cplusplus
 #define _M_ALIGNOF(_1_) alignof(_1_)
 #else
 #define _M_ALIGNOF(_1_) M_OFFSETOF(struct{char _;_1_ x;},x)
