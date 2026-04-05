@@ -215,13 +215,13 @@ static void test_group(void){
     pthread_pool_destroy(p,0);
 }
 
+struct f7_task{pthread_pool_task_base_t base; int state; int id; int release;};
 
-
-static int f7(void *pool,struct{pthread_pool_task_base_t _base; int state; const int id;} * const args){
-    if(!pool) return 0;
+static int f7(pthread_pool_t *pool,struct f7_task * const args,unsigned int index){
+    if(!pool) return args->release;
     switch(args->state){
         #define CASE(_n_) case _n_:\
-            printf("statemachine[%d]: %d\n",args->id,args->state);\
+            printf("{%u} statemachine[%d]: %d\n",index,args->id,args->state);\
             ++args->state;\
             pthread_pool_task_queue(pool,args,0);\
             return 1
@@ -230,21 +230,35 @@ static int f7(void *pool,struct{pthread_pool_task_base_t _base; int state; const
         CASE(2);
         CASE(3);
         CASE(4);
-        CASE(6);
+        CASE(5);
         default:
-            printf("statemachine[%d]: %d\n",args->id,args->state);
+            printf("{%u} statemachine[%d]: %d\n",index,args->id,args->state);
         #undef CASE
     }
-    return 0;
+    return args->release;
 }
 
 static void test_statemachine(void){
-    pthread_pool_t * const p=pthread_pool_create(2,0);
+    pthread_pool_t * const p=pthread_pool_create(4,0);
+    struct f7_task stack_tasks[5], *t;
     int i=10;
-    while(i--)
-        pthread_pool_task(p,f7,0,i);
+    while(i--){
+        const int c=(i<(sizeof(stack_tasks)/sizeof(*stack_tasks)));
+        if(c) t=( pthread_pool_task_create(p,0) ? stack_tasks+i : NULL );
+        else t=pthread_pool_task_create(p,sizeof(*t));
+        if(t){
+            t->base.task=(int(*)(pthread_pool_t*,void*,unsigned int))f7;
+            t->state=0;
+            t->id=i;
+            t->release=c;
+            pthread_pool_task_queue(p,t,0);
+        }
+    }
+    pthread_pool_wait(p);
     pthread_pool_destroy(p,0);
 }
+
+
 
 
 int main(int argc, char **argv){
