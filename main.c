@@ -55,7 +55,7 @@ static int f1(void *pool,struct{pthread_pool_task_base_t _base; int cnt;} *args,
 static void benchmark(void){
     const unsigned int cores=pthread_cores();
     pthread_pool_t *p=pthread_pool_create(cores,0);
-    pthread_pool_banch(p,3);
+    pthread_pool_batch(p,3);
     printf("rt: %f\n",RUNTIME(
         unsigned int i=cores*4;
         while(i--)
@@ -175,7 +175,7 @@ static void test_group(void){
     pthread_group_t *g=malloc(sizeof(*g));
     struct timespec t[1];
     unsigned int i, done, all;
-    pthread_pool_banch(p,0);
+    pthread_pool_batch(p,0);
 
     pthread_group_init(g,4,NULL,free); // can be destroy inside task, in nonblocking mode cause group placed not in stack
     for(i=0;i<4;++i) pthread_pool_task(p,f6,(pthread_group_t*)g,i);
