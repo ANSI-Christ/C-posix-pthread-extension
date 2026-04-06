@@ -260,15 +260,57 @@ static void test_statemachine(void){
 
 
 
+struct f8_task{pthread_pool_task_base_t base; pthread_barrier_t barrier; int count;};
+
+static int f8(void * const pool,struct f8_task * const args,unsigned int index){
+    if(pool){
+        printf("thread %u paused\n",index);
+        if(--args->count) pthread_pool_task_urgent(pool,(args));
+        pthread_barrier_wait(&args->barrier);
+        printf("thread %u continue\n",index);
+    }
+    return 1;
+}
+
+static int f9(void * const pool,struct{pthread_pool_task_base_t _;int id;} * const args,unsigned int index){
+    if(pool){
+        sleepf(0.0001); printf("task %u\n",args->id);
+    }
+    return 0;
+}
+
+static void test_urgent(void){
+    pthread_pool_t *p=pthread_pool_create(4,0);
+    unsigned int i=8;
+    while(i--) pthread_pool_task(p,f9,i);
+    sleepf(0.0003);
+
+    {
+        struct f8_task t;
+        t.base.task=(int(*)(pthread_pool_t*,void*,unsigned int))f8;
+        t.count=pthread_pool_count(p);
+        pthread_barrier_init(&t.barrier,NULL,t.count+1);
+
+        pthread_pool_task_urgent(p,&t);
+
+        puts("thread main paused on getchar");
+        getchar(); pthread_barrier_wait(&t.barrier);
+        puts("thread main continue");
+
+        pthread_barrier_destroy(&t.barrier);
+    }
+
+    pthread_pool_wait(p);
+    pthread_pool_destroy(p,1);
+}
 
 int main(int argc, char **argv){
-
     test_prio();
     test_channel();
     test_reject();
     test_group();
     test_statemachine();
+    test_urgent();
     benchmark();
-
     return 0;
 }
