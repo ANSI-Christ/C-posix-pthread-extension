@@ -9,14 +9,14 @@
 
 | Metric | pthread_pool_noalloc | pthread_pool_batch | pthread_pool_default | boost::asio::thread_pool | BS::thread_pool | TBB |
 |--------|---------------------|-------------------|---------------------|-------------|-----------------|-----|
-| **Runtime (ms) ↓** | 64.80 | 82.60 | 102.90 | 145.82 | 144.74 | 21.72 |
-| **CPU Instructions (Ir) ↓** | 107,279,783 | 162,153,147 | 196,017,821 | 270,084,159 | 243,526,272 | 165,683,337 |
-| **L1 D-cache Misses (D1mr) ↓** | 2,449 | 2,739 | 2,520 | 16,196 | 60,542 | 17,538 |
-| **LL-cache Misses (DLmr) ↓** | 1,516 | 1,517 | 1,518 | 7,802 | 7,807 | 9,098 |
-| **Peak Heap Memory (Massif) ↓** | 4.2 KB | 4.2 KB | 5.8 KB | 84.4 KB | 84 KB | 80 KB |
+| **Runtime (ms)** | 64.80 | 82.60 | 102.90 | 145.82 | 144.74 | 21.72 |
+| **CPU Instructions (Ir)** | 107,279,783 | 162,153,147 | 196,017,821 | 270,084,159 | 243,526,272 | 165,683,337 |
+| **L1 D-cache Misses (D1mr)** | 2,449 | 2,739 | 2,520 | 16,196 | 60,542 | 17,538 |
+| **LL-cache Misses (DLmr)** | 1,516 | 1,517 | 1,518 | 7,802 | 7,807 | 9,098 |
+| **Peak Heap Memory (Massif)** | 4.2 KB | 4.2 KB | 5.8 KB | 84.4 KB | 84 KB | 80 KB |
 | **Total Allocations** | 26 | 480,074 | 480,074 | 185 | 487,676 | 39 |
 | **Memory Leaks** | 0 bytes | 0 bytes | 0 bytes | 0 bytes | 0 bytes | 1,152 bytes |
-| **Helgrind Errors ↓** | 0 | 0 | 0 | 370,073 | 480,241 | 415,422 |
+| **Helgrind Errors** | 0 | 0 | 0 | 370,073 | 480,241 | 415,422 |
 
 ## Code
 
