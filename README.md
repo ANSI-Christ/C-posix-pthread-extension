@@ -26,6 +26,5 @@ pthread_ext.h is an extension for POSIX pthread: thread pool, channel, task grou
 
 ## Notes
 
-- examples and benchmark are in [main.c](main.c)
-- repository also contains [C++ Boost thread pool benchmark](boost_asio_thread_pool.cpp)
+- examples are in [main.c](main.c)
 - on Windows native `pthread_kill` is broken — so here it's replaced with thread context manipulation
