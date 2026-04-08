@@ -16,7 +16,6 @@
 | **Peak Heap Memory (Massif)** | 4.2 KB | 4.2 KB | 5.8 KB | 84.4 KB | 84 KB | 80 KB |
 | **Total Allocations** | 26 | 480,074 | 480,074 | 185 | 487,676 | 39 |
 | **Memory Leaks** | 0 bytes | 0 bytes | 0 bytes | 0 bytes | 0 bytes | 1,152 bytes |
-| **Helgrind Errors** | 0 | 0 | 0 | 370,073 | 480,241 | 415,422 |
 
 ## Code
 
