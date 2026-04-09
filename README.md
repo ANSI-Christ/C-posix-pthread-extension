@@ -26,15 +26,15 @@ pthread_ext.h is an extension for POSIX pthread: thread pool, channel, task grou
 
 ## Quick Benchmark
 
-| Pool | Runtime (ms) | Peak Memory (KB) |
-|------|---------------|---------------|
-| **pthread_pool_t (noalloc)** | 64.80 | 4.2 |
-| **pthread_pool_t (batch)** | 82.60 | 4.2 |
-| **pthread_pool_t (default)** | 102.90 | 5.8 |
-| boost::asio::thread_pool | 145.82 | 84.4 |
-| BS::thread_pool | 144.74 | 84 |
-| TBB | 21.72 | 80 |
-> See [BENCHMARK.md](BENCHMARK.md) for full details (code, CPU instructions, cache misses, allocations, etc.)
+| Pool | Runtime (ms) |
+|------|---------------|
+| **pthread_pool_t (noalloc)** | ~65 |
+| **pthread_pool_t (batch)** | ~82 |
+| **pthread_pool_t (default)** | ~100 |
+| boost::asio::thread_pool | ~145 |
+| BS::thread_pool | ~144 |
+| TBB | ~22 |
+> See [BENCHMARK.md](BENCHMARK.md) for full details and its code
 
 ## Notes
 

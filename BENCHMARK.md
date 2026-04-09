@@ -4,29 +4,30 @@
 - **OS:** WSL2 Ubuntu
 - **CPU:** Intel i5-10600KF (6*2) @ 4.10 GHz
 - **RAM:** 16GB DDR4 @ 2400 MHz
+- **CC:** clang++ (14.0.0-1ubuntu1.1) -O3
 
 ## Results
 
-| Metric | pthread_pool_noalloc | pthread_pool_batch | pthread_pool_default | boost::asio::thread_pool | BS::thread_pool | TBB |
-|--------|---------------------|-------------------|---------------------|-------------|-----------------|-----|
-| **Runtime (ms)** | 64.80 | 82.60 | 102.90 | 145.82 | 144.74 | 21.72 |
-| **CPU Instructions (Ir)** | 107,279,783 | 162,153,147 | 196,017,821 | 270,084,159 | 243,526,272 | 165,683,337 |
-| **L1 D-cache Misses (D1mr)** | 2,449 | 2,739 | 2,520 | 16,196 | 60,542 | 17,538 |
-| **LL-cache Misses (DLmr)** | 1,516 | 1,517 | 1,518 | 7,802 | 7,807 | 9,098 |
-| **Peak Heap Memory (Massif)** | 4.2 KB | 4.2 KB | 5.8 KB | 84.4 KB | 84 KB | 80 KB |
-| **Total Allocations** | 26 | 480,074 | 480,074 | 185 | 487,676 | 39 |
-| **Memory Leaks** | 0 bytes | 0 bytes | 0 bytes | 0 bytes | 0 bytes | 1,152 bytes |
+| Benchmark | Runtime (ms) | CPU instructions (Ir) | Allocations | Leaks (bytes) |
+|------------|---------|-----------------------|-------------|---------------|
+| **pthread_pool_noalloc** | ~65 | 95,975,612 | 26 | 0 |
+| **pthread_pool_batch** | ~82 | 153,865,978 | 480,074 | 0 |
+| **pthread_pool_default** | ~100 | 180,217,625 | 480,074 | 0 |
+| boost::asio::thread_pool | ~145 | 270,084,159  | 185 | 0 |
+| BS::thread_pool | ~144 | 243,526,272 | 487,676 | 0 |
+| Intel TBB | ~22 | 165,683,337 | 39 | 1,152 |
 
 ## Code
 
 ```c
-static int f1(void * const pool,struct{pthread_pool_task_base_t _base; int cnt;} * const args){
+struct f1_task{pthread_pool_task_base_t _base; int cnt;}
+static int f1(pthread_pool_t * const pool,struct f1_task * const args){
     if(pool && args->cnt) pthread_pool_task(pool,f1,args->cnt-1);
     return 0;
 }
 
 static void pthread_pool_default(void){
-    const unsigned int cores=12;//pthread_cores();
+    const unsigned int cores=12;
     pthread_pool_t *p=pthread_pool_create(cores,0);
     printf("pthread_pool_default rt: %f ms\n",RUNTIME_MS(
         unsigned int i=cores*4;
@@ -41,13 +42,14 @@ static void pthread_pool_default(void){
 ```
 
 ```c
-static int f2(void * const pool,struct{pthread_pool_task_base_t _base; int cnt;} * const args){
+struct f2_task{pthread_pool_task_base_t _base; int cnt;}
+static int f2(pthread_pool_t * const pool,struct f2_task * const args){
     if(pool && args->cnt) pthread_pool_task(pool,f2,args->cnt-1);
     return 0;
 }
 
 static void pthread_pool_batch(void){
-    const unsigned int cores=12;//pthread_cores();
+    const unsigned int cores=12;
     pthread_pool_t *p=pthread_pool_create(cores,0);
     pthread_pool_batch(p,4);
     printf("pthread_pool_batch rt: %f ms\n",RUNTIME_MS(
@@ -63,15 +65,16 @@ static void pthread_pool_batch(void){
 ```
 
 ```c
-static int f3(void * const pool,struct{pthread_pool_task_base_t _base; int cnt;} * const args){
+struct f3_task{pthread_pool_task_base_t base; int cnt;}
+static int f3(pthread_pool_t * const pool,struct f3_task * const args){
     if(pool && args->cnt--) pthread_pool_task_queue(pool,(args),0);
     return 1;
 }
 
 static void pthread_pool_noalloc(void){
-    const unsigned int cores=12;//pthread_cores();
+    const unsigned int cores=12;
     pthread_pool_t *p=pthread_pool_create(cores,0);
-    struct{pthread_pool_task_base_t t; int cnt;} task[48];
+    struct f3_task task[48];
     pthread_pool_batch(p,4);
     printf("pthread_pool_noalloc: %f ms\n",RUNTIME_MS(
         unsigned int i=cores*4;
@@ -102,7 +105,7 @@ private:
 };
 
 static void boost_asio_thread_pool(void){
-    const unsigned int cores=12;//std::thread::hardware_concurrency();
+    const unsigned int cores=12;
     boost::asio::thread_pool p(cores);
     std::promise<void> waiters[cores*4];
 
@@ -154,7 +157,7 @@ private:
 };
 
 static void TBB(void){
-    const unsigned int cores=12;//std::thread::hardware_concurrency();
+    const unsigned int cores=12;
     tbb::task_arena p(cores);
 
     auto t=std::chrono::high_resolution_clock::now().time_since_epoch().count();
