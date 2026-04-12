@@ -151,21 +151,21 @@ static void test_reject(void){
 static int f6(void *p,struct{pthread_pool_task_base_t _base; pthread_group_t *g; unsigned  int n;} * const args){
     const int rejected=pthread_group_rejected(args->g);
     if(rejected){
-        if(rejected==1) printf("group destroy at place 1\n\n");
+        if(rejected==1){free(args->g); printf("group destroy at place 1\n\n");}
         else if(rejected==-1){/* nothing to do */}
         return 0;
     }
     if(!p){
-        if(pthread_group_reject(args->g,1)==1) printf("group destroy at place 2\n\n");
+        if(pthread_group_reject(args->g,1)==1){free(args->g); printf("group destroy at place 2\n\n");}
         return 0;
     }
     if(args->n==5){
-        if(pthread_group_reject(args->g,1)==1) printf("group destroy at place 3\n\n");
+        if(pthread_group_reject(args->g,1)==1){free(args->g); printf("group destroy at place 3\n\n");}
     }else{
         printf("task begin %u\n",args->n);
         sleepf(0.1);
         printf("task end %u\n\n",args->n);
-        if(pthread_group_progress(args->g,0)==1) printf("group destroy at place 4\n\n");
+        if(pthread_group_progress(args->g,0)==1){free(args->g); printf("group destroy at place 4\n\n");}
     }
     return 0;
 }
@@ -173,10 +173,11 @@ static int f6(void *p,struct{pthread_pool_task_base_t _base; pthread_group_t *g;
 static void test_group(void){
     pthread_pool_t * const p=pthread_pool_create(1,0);
     pthread_group_t *g=malloc(sizeof(*g));
+//    pthread_group_t g[1];
     struct timespec t[1];
     unsigned int i, done, all;
 
-    pthread_group_init(g,4,NULL,free); // can be destroy inside task, in nonblocking mode cause group placed not in stack
+    pthread_group_init(g,4,NULL);
     for(i=0;i<4;++i) pthread_pool_task(p,f6,(pthread_group_t*)g,i);
     i=pthread_group_wait(g,&done,&all);
     printf("group wait end = %d [%u / %u]\n\n",i,done,all);
@@ -208,8 +209,15 @@ static void test_group(void){
     for(i=0;i<4;++i) pthread_pool_task(p,f6,(pthread_group_t*)g,i);
     timespec_future(t,0,250*1000*1000);
     i=pthread_group_timedwait(g,&done,&all,t);
-    if(pthread_group_destroy(g)==1)
+
+    if(sizeof(g)!=sizeof(void*)){ //if group placed on stack
+        pthread_group_reject(g,0); // blocking rejection
+        if(pthread_group_destroy(g))
+            printf("group destroy at place 0\n\n");
+    }else if(pthread_group_destroy(g)){
+        free(g);
         printf("group destroy at place 0\n\n");
+    }
 
     pthread_pool_destroy(p,0);
 }
