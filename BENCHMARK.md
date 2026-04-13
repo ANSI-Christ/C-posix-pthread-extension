@@ -11,8 +11,8 @@
 | Benchmark | Runtime (ms) | CPU instructions (Ir) | Allocations |
 |------------|---------|-----------------------|-------------|
 | **pthread_pool_noalloc** | ~65 | 95,975,612 | 26 |
-| **pthread_pool_batch** | ~82 | 153,865,978 | 480,074 |
-| **pthread_pool_default** | ~100 | 180,217,625 | 480,074 |
+| **pthread_pool_batch** | ~82 | 153,865,978 | 480,062 |
+| **pthread_pool_default** | ~100 | 180,217,625 | 480,062 |
 | boost::asio::thread_pool | ~145 | 270,084,159  | 185 |
 | BS::thread_pool | ~144 | 243,526,272 | 487,676 |
 | Intel TBB | ~22 | 165,683,337 | 39 |
