@@ -5,13 +5,14 @@
 - **CPU:** Intel i5-10600KF (6*2) @ 4.10 GHz
 - **RAM:** 16GB DDR4 @ 2400 MHz
 - **CC:** clang++ (14.0.0-1ubuntu1.1) -O3
+- **valgrind** 3.18.1
 
 ## Results
 
 | Benchmark | Runtime (ms) | CPU instructions (Ir) | Allocations |
 |------------|---------|-----------------------|-------------|
-| **pthread_pool_noalloc** | ~65 | 95,975,612 | 26 |
-| **pthread_pool_batch** | ~82 | 153,865,978 | 480,062 |
+| **pthread_pool_noalloc** | ~65 | 90,753,256 | 14 |
+| **pthread_pool_batch** | ~82 | 151,993,058 | 480,062 |
 | **pthread_pool_default** | ~100 | 180,217,625 | 480,062 |
 | boost::asio::thread_pool | ~145 | 270,084,159  | 185 |
 | BS::thread_pool | ~144 | 243,526,272 | 487,676 |
@@ -20,74 +21,107 @@
 ## Code
 
 ```c
-struct f1_task{pthread_pool_task_base_t _base; int cnt;}
-static int f1(pthread_pool_t * const pool,struct f1_task * const args){
-    if(pool && args->cnt) pthread_pool_task(pool,f1,args->cnt-1);
-    return 0;
+struct f1_task{pthread_pool_task_t base; int cnt;};
+static void f1(pthread_pool_t * const pool,struct f1_task * const args){
+    if(pool){
+        if(args->cnt){
+            struct f1_task *t=(struct f1_task *)malloc(sizeof(*t));
+            t->base.task=(void(*)(pthread_pool_t*,void*,unsigned int))f1;
+            t->cnt=args->cnt-1;
+            pthread_pool_task(pool,t,0);
+        }
+    }
+    free(args);
 }
 
 static void pthread_pool_default(void){
+    struct timespec ts[2];
+    pthread_pool_t *p;
     const unsigned int cores=12;
-    pthread_pool_t *p=pthread_pool_create(cores,0);
-    printf("pthread_pool_default rt: %f ms\n",RUNTIME_MS(
-        unsigned int i=cores*4;
-        while(i--){
-            const int d=10000;
-            pthread_pool_task(p,f1,d);
-        }
-        pthread_pool_wait(p);
-    ));
+    unsigned int i=cores*4;
+
+    pthread_pool_create(&p,NULL,cores,0);
+
+    clock_gettime(CLOCK_REALTIME,ts+0);
+    while(i--){
+        struct f1_task *t=(struct f1_task *)malloc(sizeof(*t));
+        t->base.task=(void(*)(pthread_pool_t*,void*,unsigned int))f1;
+        t->cnt=10000;
+        pthread_pool_task(p,t,0);
+    }
+    pthread_pool_wait(p);
+    clock_gettime(CLOCK_REALTIME,ts+1);
+
     pthread_pool_destroy(p,1);
+    printf("pthread_pool_default rt: %f ms\n",(ts[1].tv_sec-ts[0].tv_sec)*1000. + (ts[1].tv_nsec-ts[0].tv_nsec)/1000000.);
 }
 ```
 
 ```c
-struct f2_task{pthread_pool_task_base_t _base; int cnt;}
-static int f2(pthread_pool_t * const pool,struct f2_task * const args){
-    if(pool && args->cnt) pthread_pool_task(pool,f2,args->cnt-1);
-    return 0;
+struct f2_task{pthread_pool_task_t base; int cnt;};
+static void f2(pthread_pool_t * const pool,struct f2_task * const args){
+    if(pool){
+        if(args->cnt){
+            struct f1_task *t=(struct f2_task *)malloc(sizeof(*t));
+            t->base.task=(void(*)(pthread_pool_t*,void*,unsigned int))f2;
+            t->cnt=args->cnt-1;
+            pthread_pool_task(pool,t,0);
+        }
+    }
+    free(args);
 }
 
 static void pthread_pool_batch(void){
+    struct timespec ts[2];
+    pthread_pool_t *p;
     const unsigned int cores=12;
-    pthread_pool_t *p=pthread_pool_create(cores,0);
+    unsigned int i=cores*4;
+
+    pthread_pool_create(&p,NULL,cores,0);
     pthread_pool_batch(p,4);
-    printf("pthread_pool_batch rt: %f ms\n",RUNTIME_MS(
-        unsigned int i=cores*4;
-        while(i--){
-            const int d=10000;
-            pthread_pool_task(p,f2,d);
-        }
-        pthread_pool_wait(p);
-    ));
+
+    clock_gettime(CLOCK_REALTIME,ts+0);
+    while(i--){
+        struct f2_task *t=(struct f2_task *)malloc(sizeof(*t));
+        t->base.task=(void(*)(pthread_pool_t*,void*,unsigned int))f2;
+        t->cnt=10000;
+        pthread_pool_task(p,t,0);
+    }
+    pthread_pool_wait(p);
+    clock_gettime(CLOCK_REALTIME,ts+1);
+
     pthread_pool_destroy(p,1);
+    printf("pthread_pool_batch rt: %f ms\n",(ts[1].tv_sec-ts[0].tv_nsec)*1000. + (ts[1].tv_sec-ts[0].tv_nsec)/1000000.);
 }
 ```
 
 ```c
-struct f3_task{pthread_pool_task_base_t base; int cnt;}
-static int f3(pthread_pool_t * const pool,struct f3_task * const args){
-    if(pool && args->cnt--) pthread_pool_task_queue(pool,(args),0);
-    return 1;
+struct f3_task{pthread_pool_task_t base; int cnt;};
+static void f3(pthread_pool_t * const pool,struct f3_task * const args){
+    if(pool && args->cnt--) pthread_pool_task(pool,args,0);
 }
 
 static void pthread_pool_noalloc(void){
+    struct timespec ts[2];
+    struct f3_task t[48];
+    pthread_pool_t *p;
     const unsigned int cores=12;
-    pthread_pool_t *p=pthread_pool_create(cores,0);
-    struct f3_task task[48];
+    unsigned int i=cores*4;
+
+    pthread_pool_create(&p,NULL,cores,0);
     pthread_pool_batch(p,4);
-    printf("pthread_pool_noalloc: %f ms\n",RUNTIME_MS(
-        unsigned int i=cores*4;
-        while(i--){
-            if(pthread_pool_task_create(p,0)){
-                task[i].t.task=(int(*)(pthread_pool_t*,void*,unsigned int))f3;
-                task[i].cnt=10000;
-                pthread_pool_task_queue(p,task+i,0);
-            }
-        }
-        pthread_pool_wait(p);
-    ));
+
+    clock_gettime(CLOCK_REALTIME,ts+0);
+    while(i--){
+        t[i].base.task=(void(*)(pthread_pool_t*,void*,unsigned int))f3;
+        t[i].cnt=10000;
+        pthread_pool_task(p,t+i,0);
+    }
+    pthread_pool_wait(p);
+    clock_gettime(CLOCK_REALTIME,ts+1);
+
     pthread_pool_destroy(p,1);
+    printf("pthread_pool_noalloc rt: %f ms\n",(ts[1].tv_sec-ts[0].tv_sec)*1000. + (ts[1].tv_nsec-ts[0].tv_nsec)/1000000.);
 }
 ```
 

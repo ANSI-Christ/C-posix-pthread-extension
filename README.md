@@ -5,12 +5,10 @@ pthread_ext.h is an extension for POSIX pthread: thread pool, channel, task grou
 ## Features
 
 - not a toy
-- 2x single-header
+- single-header
 - flexible API
 - highly optimized
 - manual memory control
-- minimal resource usage
-- small codebase relative to feature set
 
 ## Components
 
@@ -21,10 +19,9 @@ pthread_ext.h is an extension for POSIX pthread: thread pool, channel, task grou
 ## Requirements
 
 - POSIX-compatible environment
-- C99 compiler with GNU extensions (GCC 2.95+, Clang 1.0+, MinGW)
-- C89 compiler with -DM_PP_C89
+- C89 compiler
 
-## Quick Benchmark
+## Benchmark
 
 | Pool | Runtime (ms) |
 |------|---------------|
