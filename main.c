@@ -163,25 +163,25 @@ struct f4_task{pthread_pool_task_t base; pthread_group_t *g; unsigned  int n;};
 static void f4(void *p,struct f4_task * const args){
     const int rejected=pthread_group_rejected(args->g);
 
-    if(rejected==1){
+    if(rejected==ENOENT){
         free(args->g);
         printf("group destroy at place 1\n\n");
         return;
-    }else if(rejected==-1)
+    }else if(rejected==EINTR)
         return;
 
     if(!p){
-        if(pthread_group_reject(args->g,1)==1){free(args->g); printf("group destroy at place 2\n\n");}
+        if(pthread_group_reject(args->g,1)==ENOENT){free(args->g); printf("group destroy at place 2\n\n");}
         return;
     }
 
     if(args->n==5){
-        if(pthread_group_reject(args->g,1)==1){free(args->g); printf("group destroy at place 3\n\n");}
+        if(pthread_group_reject(args->g,1)==ENOENT){free(args->g); printf("group destroy at place 3\n\n");}
     }else{
         printf("task begin %u\n",args->n);
         sleepf(0.1);
         printf("task end %u\n\n",args->n);
-        if(pthread_group_progress(args->g,0)==1){free(args->g); printf("group destroy at place 4\n\n");}
+        if(pthread_group_progress(args->g,0)==ENOENT){free(args->g); printf("group destroy at place 4\n\n");}
     }
 }
 
@@ -204,20 +204,20 @@ static void test_group(void){
 
     for(i=0;i<4;++i) pthread_pool_task(p,t+i,0);
     i=pthread_group_wait(g,&done,&all);
-    printf("group wait end = %d [%u / %u]\n\n",i,done,all);
+    printf("group wait = %d [%u / %u]\n\n",i,done,all);
 
 
     pthread_group_progress(g,7);
     for(i=0;i<7;++i) pthread_pool_task(p,t+i,0);
     i=pthread_group_wait(g,&done,&all);
-    printf("group wait end = %d [%u / %u]\n\n",i,done,all);
+    printf("group wait = %d [%u / %u]\n\n",i,done,all);
 
 
     pthread_group_progress(g,4);
     for(i=0;i<4;++i) pthread_pool_task(p,t+i,0);
     timespec_future(ts,0,300*1000*1000);
     i=pthread_group_timedwait(g,&done,&all,ts);
-    printf("group timedwait end = %d [%u / %u]\n\n",i,done,all);
+    printf("group timedwait = %d [%u / %u]\n\n",i,done,all);
     pthread_group_reject(g,0);
 
 
@@ -226,7 +226,7 @@ static void test_group(void){
     sleepf(0.15);
     pthread_pool_reject(p);
     i=pthread_group_wait(g,&done,&all);
-    printf("group wait unpending end = %d [%u / %u]\n\n",i,done,all);
+    printf("group reject & wait = %d [%u / %u]\n\n",i,done,all);
 
 
     pthread_group_progress(g,4);
@@ -236,9 +236,10 @@ static void test_group(void){
 
     if(sizeof(g)!=sizeof(void*)){ //if group placed on stack
         pthread_group_reject(g,0); // blocking rejection
-        if(pthread_group_destroy(g))
+        if(pthread_group_destroy(g)==ENOENT)
             printf("group destroy at place 0\n\n");
-    }else if(pthread_group_destroy(g)){
+        else printf("cant get here\n");
+    }else if(pthread_group_destroy(g)==ENOENT){
         free(g);
         printf("group destroy at place 0\n\n");
     }
