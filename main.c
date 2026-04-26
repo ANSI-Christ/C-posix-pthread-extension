@@ -258,7 +258,7 @@ static void f5(pthread_pool_t *pool,struct f5_task * const args,unsigned int ind
             #define CASE(_n_) case _n_:\
                 printf("{%u} statemachine[%d]: %d\n",index,args->id,args->state);\
                 ++args->state;\
-                pthread_pool_soft(pool,args,0);\
+                pthread_pool_task(pool,args,0);\
                 return
             CASE(0);
             CASE(1);
