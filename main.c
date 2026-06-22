@@ -354,6 +354,34 @@ static void test_urgent(void){
 
 
 
+
+struct f8_task{pthread_pool_task_t base; pthread_pool_t **pools; int pool_num;};
+
+static void ping_pong(void * const pool,struct f8_task * const args,unsigned int index){
+    if(pool){
+        const int i=(args->pool_num++)%2;
+        printf("ping pong %d\n",i);
+        sleepf(0.013);
+        pthread_pool_task(args->pools[i],args,0);
+    }
+}
+
+static void test_gracefull_destroy(void){
+    int i;
+    pthread_pool_t *p[2];
+    struct f8_task t={{NULL,(void(*)(pthread_pool_t*,void*,unsigned int))ping_pong},p,0};
+    for(i=0;i<2;++i) pthread_pool_create(p+i,NULL,1,0);
+    pthread_pool_task(p[0],&t,0);
+    sleepf(0.1);
+    for(i=0;i<2;++i) pthread_pool_cancel(p[i]);
+    for(i=0;i<2;++i) pthread_pool_wait(p[i]);
+    for(i=0;i<2;++i) pthread_pool_destroy(p[i],1);
+}
+
+
+
+
+
 int main(int argc, char **argv){
 #define TEST(_f_) do{puts("------" #_f_ "------\n"); _f_; puts("\n\n");}while(0)
     TEST(benchmark());
@@ -362,6 +390,7 @@ int main(int argc, char **argv){
     TEST(test_reject());
     TEST(test_group());
     TEST(test_statemachine());
+    TEST(test_gracefull_destroy());
     TEST(test_urgent());
     return 0;
 }
