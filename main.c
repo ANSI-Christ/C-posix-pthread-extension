@@ -166,9 +166,8 @@ static void f4(void *p,struct f4_task * const args){
     if(rejected==ENOENT){
         free(args->g);
         printf("group destroy at place 1\n\n");
-        return;
-    }else if(rejected==EINTR)
-        return;
+    }
+    if(rejected) return;
 
     if(!p){
         if(pthread_group_reject(args->g,1)==ENOENT){free(args->g); printf("group destroy at place 2\n\n");}
@@ -207,8 +206,8 @@ static void test_group(void){
     printf("group wait = %d [%u / %u]\n\n",i,done,all);
 
 
-    pthread_group_progress(g,7);
-    for(i=0;i<7;++i) pthread_pool_task(p,t+i,0);
+    pthread_group_progress(g,10);
+    for(i=0;i<10;++i) pthread_pool_task(p,t+i,0);
     i=pthread_group_wait(g,&done,&all);
     printf("group wait = %d [%u / %u]\n\n",i,done,all);
 
@@ -217,8 +216,8 @@ static void test_group(void){
     for(i=0;i<4;++i) pthread_pool_task(p,t+i,0);
     timespec_future(ts,0,300*1000*1000);
     i=pthread_group_timedwait(g,&done,&all,ts);
-    printf("group timedwait = %d [%u / %u]\n\n",i,done,all);
     pthread_group_reject(g,0);
+    printf("group timedwait = %d [%u / %u]\n\n",i,done,all);
 
 
     pthread_group_progress(g,4);
