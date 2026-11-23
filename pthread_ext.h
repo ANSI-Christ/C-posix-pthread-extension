@@ -608,7 +608,7 @@ void pthread_pool_destroy(pthread_pool_t * const p,const unsigned char now){
         pthread_cond_signal(p->cond);
         pthread_mutex_unlock(p->mtx);
         if(i & 12) return;
-        pthread_join(_pthread_pool_tids(p)[0],NULL);
+        if(p->count) pthread_join(_pthread_pool_tids(p)[0],NULL);
         _pthread_pool_release(p);
     }
 }
